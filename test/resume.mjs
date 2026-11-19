@@ -1,0 +1,23 @@
+// Opens a past chat ("Freeing hard drive space") via the history list with the real claude, then ends it. Sends no prompt.
+import puppeteer from 'puppeteer-core';
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const b = await puppeteer.launch({ executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', headless: true, enableExtensions: true });
+const id = await b.installExtension(new URL('../extension', import.meta.url).pathname);
+const p = await b.newPage();
+await p.setViewport({ width: 520, height: 900, deviceScaleFactor: 2 });
+await p.goto(`chrome-extension://${id}/panel.html`);
+await p.waitForFunction(() => document.getElementById('offline').hidden);
+await p.evaluate(() => openHistory());
+await p.waitForSelector('#history-list li[data-idx]');
+await p.type('#history-q', 'hard drive space');
+await sleep(300);
+await p.keyboard.press('Enter');
+await sleep(12000);
+const title = await p.$eval('.pane .pane-title', (e) => e.textContent);
+const text = await p.$eval('.pane .xterm-rows', (e) => e.innerText);
+console.log('pane title:', title);
+console.log(text.split('\n').filter((l) => l.trim()).slice(0, 14).join('\n'));
+await p.screenshot({ path: '../docs/shots/10-resumed.png' });
+await p.hover('.pane'); await p.click('.pane .pane-close'); await sleep(500);
+await b.close();
+console.log(/outreach|df -h/i.test(text) ? 'PASS past chat reopens with its history' : 'FAIL');

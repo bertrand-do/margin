@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Margin</title>
+  <link rel="stylesheet" href="vendor/xterm.css">
+  <link rel="stylesheet" href="panel.css">
+</head>
+<body>
+  <header class="bar">
+    <div class="left">
+    <button id="btn-space" class="space-btn" title="Spaces (⌘J)"><span id="space-name">…</span><svg viewBox="0 0 16 16"><path d="M5 6.5l3 3 3-3"/></svg></button>
+    <div class="layouts" role="group" aria-label="Layout">
+      <button data-layout="1" title="One terminal"><svg viewBox="0 0 16 16"><rect x="2" y="2" width="12" height="12" rx="1.5"/></svg></button>
+      <button data-layout="2v" title="Two, stacked"><svg viewBox="0 0 16 16"><rect x="2" y="2" width="12" height="12" rx="1.5"/><path d="M2 8h12"/></svg></button>
+      <button data-layout="2h" title="Two, side by side"><svg viewBox="0 0 16 16"><rect x="2" y="2" width="12" height="12" rx="1.5"/><path d="M8 2v12"/></svg></button>
+      <button data-layout="4" title="Four"><svg viewBox="0 0 16 16"><rect x="2" y="2" width="12" height="12" rx="1.5"/><path d="M8 2v12M2 8h12"/></svg></button>
+    </div>
+    </div>
+  </header>
+
+  <main id="grid" class="grid"></main>
+
+  <div id="offline" class="offline" hidden>
+    <p>The Margin bridge isn't running.</p>
+    <p class="muted">Run this in the Margin folder:</p>
+    <code>./install.sh</code>
+    <p class="muted">Retrying…</p>
+  </div>
+
+  <div id="history" class="history" hidden>
+    <div class="history-box">
+      <input id="history-q" type="search" placeholder="Search past chats" autocomplete="off" spellcheck="false">
+      <ul id="history-list"></ul>
+      <footer class="muted">↑↓ to move · Enter to open · Esc to close</footer>
+    </div>
+  </div>
+
+  <div id="spaces" class="history spaces" hidden>
+    <div class="history-box">
+      <div class="spaces-head">
+        <span class="forced-only">Which Space is this window?</span>
+        <span class="not-forced">Spaces</span>
+      </div>
+      <ul id="spaces-list" tabindex="0"></ul>
+      <div class="spaces-foot">
+        <button id="btn-new-space" class="link">+ New Space</button>
+        <div id="new-space" class="new-space" hidden>
+          <input name="name" placeholder="Name, e.g. Clients" autocomplete="off" spellcheck="false">
+          <input name="cwd" list="dirs" placeholder="Folder for new chats" spellcheck="false">
+          <button id="btn-create-space" class="start">Create</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <template id="space-tpl">
+    <li>
+      <div class="s-main"><div class="s-name"></div><div class="s-meta"></div></div>
+      <button class="s-rename" title="Rename"><svg viewBox="0 0 16 16"><path d="M10.5 3.5l2 2L6 12H4v-2z"/></svg></button>
+      <button class="s-delete" title="Delete this empty Space"><svg viewBox="0 0 16 16"><path d="M3.5 5h9M6.5 5V3.5h3V5M5 5l.5 8h5l.5-8"/></svg></button>
+    </li>
+  </template>
+
+  <template id="pane-tpl">
+    <section class="pane">
+      <div class="pane-head">
+        <span class="dot"></span>
+        <span class="pane-title"></span>
+        <button class="pane-resume" title="Open a past chat here"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.5"/><path d="M8 5v3l2 1.5"/></svg></button>
+        <button class="pane-close" title="Close"><svg viewBox="0 0 16 16"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7"/></svg></button>
+      </div>
+      <div class="pane-body">
+        <div class="term"></div>
+        <div class="empty">
+          <button class="start">New chat</button>
+          <label class="cwd-label">in <input class="cwd" list="dirs" spellcheck="false"></label>
+          <button class="resume link">Open a past chat</button>
+        </div>
+      </div>
+    </section>
+  </template>
+  <datalist id="dirs"></datalist>
+
+  <script src="vendor/xterm.js"></script>
+  <script src="vendor/addon-fit.js"></script>
+  <script src="vendor/addon-web-links.js"></script>
+  <script src="panel.js"></script>
+</body>
+</html>
