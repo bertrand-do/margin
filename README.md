@@ -52,7 +52,24 @@ I have used nothing else for a month now. It is deliberately very simple. Ultra 
 
 ## Install
 
-A Chrome Web Store version is coming. For now you side-load it, which takes about two minutes.
+A Chrome Web Store version is coming. For now you load it yourself, which takes about two minutes.
+
+1. [Download Margin](https://github.com/bertrand-do/margin/archive/refs/heads/main.zip) and unzip it.
+2. Move the `margin-main` folder to your home folder. Don't leave it in Downloads, because Margin runs from this folder.
+3. Open the Terminal app, drag the `install.sh` file from the folder into the Terminal window and press Enter. This starts the small helper that runs Claude Code, now and at every login.
+4. Type `chrome://extensions` in your Chrome address bar and turn on **Developer mode** at the top right.
+5. Click **Load unpacked** and pick the `extension` folder inside `margin-main`.
+6. Check that the Margin switch is on.
+
+<p align="center"><img src="assets/install-load.png" alt="The Chrome extensions page with the Load unpacked button and the Margin switch turned on" width="430"></p>
+
+7. Click the puzzle icon in your toolbar and pin Margin.
+
+<p align="center"><img src="assets/install-pin.png" alt="The Chrome extensions menu with the pin next to Margin" width="300"></p>
+
+8. Click the Margin icon or press Option+Shift+K.
+
+If you prefer git, steps 1 to 3 are just this:
 
 ```
 git clone https://github.com/bertrand-do/margin.git
@@ -60,13 +77,9 @@ cd margin
 ./install.sh
 ```
 
-`install.sh` installs the bridge and starts it now and at every login.
-
-Then open `chrome://extensions`, turn on Developer mode, click "Load unpacked" and pick the `extension` folder inside `margin`. Pin the Margin icon, then click it or press Option+Shift+K.
-
 ## Update
 
-Run `git pull`, run `./install.sh` again, then reload the extension on `chrome://extensions`.
+Download Margin again and replace the folder (or run `git pull`), run `install.sh` again, then click the reload arrow on the Margin card in `chrome://extensions`.
 
 Re-running the install restarts the bridge, which ends the chats that are running. You can reopen them from past chats with Cmd+K.
 
