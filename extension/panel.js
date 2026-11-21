@@ -661,9 +661,33 @@ historyQ.addEventListener('keydown', (e) => {
 });
 historyEl.addEventListener('mousedown', (e) => { if (e.target === historyEl) closeHistory(); });
 
+// ---------- full width ----------
+// Chrome caps the side panel at about half the window. Full width is the same page in a tab of its own:
+// same Space, same chats (they live on the bridge). The button, or Option+Shift+F, goes there and back.
+const FULL = params.get('full') === '1';
+const FROM = Number(params.get('from')) || null; // the tab the panel sat next to
+async function toggleFull() {
+  if (!FULL) {
+    const [tab] = await chrome.tabs.query({ active: true, windowId: windowId ?? undefined });
+    save();
+    const q = new URLSearchParams({ full: '1', ...(tab?.id != null && { from: String(tab.id) }), ...(space && { space: space.id }) });
+    await chrome.tabs.create({ url: chrome.runtime.getURL(`panel.html?${q}`), ...(windowId != null && { windowId }), ...(tab && { index: tab.index + 1 }) });
+    window.close(); // closes the side panel, so the same chats are not on screen twice
+    return;
+  }
+  // Back: the side panel has to be opened first, while the click still counts as a user action.
+  const open = windowId != null ? chrome.sidePanel.open({ windowId }).catch(() => {}) : null;
+  save();
+  const me = await chrome.tabs.getCurrent();
+  if (FROM) await chrome.tabs.update(FROM, { active: true }).catch(() => {});
+  await open;
+  if (me) chrome.tabs.remove(me.id);
+}
+
 // ---------- current tab ----------
 async function sendTab() {
-  const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true, windowType: 'normal' });
+  // In full width there is no page beside Margin: use the tab it came from.
+  const [tab] = FULL ? [FROM && await chrome.tabs.get(FROM).catch(() => null)] : await chrome.tabs.query({ active: true, lastFocusedWindow: true, windowType: 'normal' });
   const p = panes[state.focus];
   if (!tab?.url || !p.tid) return;
   wsSend({ type: 'input', id: p.tid, data: `${tab.url} ` });
@@ -677,6 +701,7 @@ function keyHandler(e) {
   if (e.metaKey && !e.shiftKey && e.key.toLowerCase() === 'j') { openSpaces(); e.preventDefault(); return false; }
   if (e.metaKey && e.shiftKey && e.key.toLowerCase() === 'l') { sendTab(); e.preventDefault(); return false; }
   if (e.metaKey && e.shiftKey && e.key === 'Enter') { toggleZoom(); e.preventDefault(); return false; }
+  if (e.altKey && e.shiftKey && e.code === 'KeyF') { toggleFull(); e.preventDefault(); return false; }
   if (e.altKey && /^Digit[1-4]$/.test(e.code)) {
     const i = Number(e.code.slice(5)) - 1;
     if (visible().includes(panes[i])) focusPane(i);
@@ -729,6 +754,9 @@ async function fillDirs() {
   for (let i = 0; i < MAX; i++) panes.push(makePane(i));
   document.querySelectorAll('[data-layout]').forEach((b) => b.addEventListener('click', () => pickLayout(b.dataset.layout)));
   document.getElementById('btn-space').addEventListener('click', () => openSpaces());
+  document.getElementById('btn-full').addEventListener('click', () => toggleFull());
+  document.body.classList.toggle('full', FULL);
+  if (FULL) document.getElementById('btn-full').title = 'Back to the side panel (⌥⇧F)';
   applyLayout('1');
   try { windowId = (await chrome.windows.getCurrent()).id; } catch {}
   await loadSpaces();

@@ -24,6 +24,8 @@ I have used nothing else for a month now. It is deliberately very simple. Ultra 
 
 **Any chat can take the full space of Margin, and that is my favourite feature.** If you have the 4 chat layout, hover any chat and click the full size button in its title bar, the one with the corner brackets. That chat then takes the whole panel while the other chats keep running, hidden. Click the button again and you are back in the layout you came from, with every chat in its old place. You can also press Cmd+Shift+Enter or double click the title bar. I use it when four chats are running and one needs my attention.
 
+**Margin can also use the whole width of your window.** The browser limits a side panel to about half the window, so I added a button at the right end of Margin's top bar, or Option+Shift+F, that opens Margin in a tab of its own. It stays in the same Space with the same chats, and nothing stops. The same button or shortcut brings you back to the side panel, on the page you came from, and in full width Cmd+Shift+L pastes the link of that page.
+
 **Spaces keep your work apart.** Press Cmd+J to switch between named sets of chats, for example Clients, Support, or your app. Each Space has its own layout and its own default folder for new chats. Each browser window shows one Space, so one desktop can be Clients and another one your app. You can rename Spaces, drag them to reorder, and delete the empty ones. Switching Space never stops a chat.
 
 <p align="center"><img src="assets/spaces.png" alt="The Spaces switcher listing named sets of chats" width="700"></p>
@@ -51,6 +53,7 @@ I have used nothing else for a month now. It is deliberately very simple. Ultra 
 | Cmd+K | Search and reopen past chats |
 | Cmd+Shift+L | Paste the current tab's link into the chat |
 | Cmd+Shift+Enter | Make the chat you are in full size, and go back |
+| Option+Shift+F | Switch between the side panel and full width |
 | Option+1 to Option+4 | Jump between panes |
 
 ## Install

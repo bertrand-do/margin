@@ -21,6 +21,8 @@ svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width:
 .bar button:hover { background: var(--hover); color: var(--fg); }
 .bar button.on { color: var(--fg); background: var(--hover); }
 .layouts, .actions { display: flex; gap: 1px; }
+#btn-full .f-in, body.full #btn-full .f-out { display: none; }
+body.full #btn-full .f-in { display: block; }
 .left { display: flex; align-items: center; gap: 6px; min-width: 0; }
 .bar .space-btn { width: auto; max-width: 140px; padding: 0 4px 0 8px; gap: 2px; display: flex; align-items: center; color: var(--fg); font-weight: 500; }
 .space-btn span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
