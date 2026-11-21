@@ -75,6 +75,42 @@ check(JSON.stringify(await hiddenList()) === '[true,false,true,true]' && (await 
 await page.click('[data-layout="2h"]'); await sleep(500);
 check(JSON.stringify(await hiddenList()) === '[false,false,true,true]' && await focusIdx() === 1, 'two columns shows chats 1 and 2, cursor stays in 2');
 
+// Full-size button on a chat: fills the panel, same button goes back to where you were.
+await page.click('[data-layout="4"]'); await sleep(600);
+await page.hover('.pane:nth-child(4)');
+await page.click('.pane:nth-child(4) .pane-zoom'); await sleep(600);
+check(JSON.stringify(await hiddenList()) === '[true,true,true,false]' && (await rows(3)).includes('chat-4'), 'full-size button shows the fourth chat alone');
+check(await page.$eval('.pane:nth-child(4) .pane-zoom', (b) => b.title.startsWith('Back')), 'the button now says go back');
+await page.screenshot({ path: `${SHOTS}/24-zoom-fourth.png` });
+await page.reload(); await page.waitForFunction(() => document.getElementById('offline').hidden); await sleep(1500);
+await page.hover('.pane:nth-child(4)');
+await page.click('.pane:nth-child(4) .pane-zoom'); await sleep(800);
+check(await layout() === '4' && await shown() === 4 && await focusIdx() === 3, 'same button goes back to four after a reload, cursor in the fourth');
+check((await Promise.all([0, 1, 2, 3].map(rows))).every((r, i) => r.includes(`chat-${i + 1}`)), 'every chat is in its old place');
+
+// From two stacked it comes back to two stacked.
+await page.click('[data-layout="2v"]'); await sleep(500);
+await page.click('.pane:nth-child(2) .term'); await sleep(200);
+await page.keyboard.down('Meta'); await page.keyboard.down('Shift'); await page.keyboard.press('Enter'); await page.keyboard.up('Shift'); await page.keyboard.up('Meta'); await sleep(600);
+check(JSON.stringify(await hiddenList()) === '[true,false,true,true]', 'Cmd+Shift+Enter makes the second chat full size');
+await page.keyboard.down('Meta'); await page.keyboard.down('Shift'); await page.keyboard.press('Enter'); await page.keyboard.up('Shift'); await page.keyboard.up('Meta'); await sleep(600);
+check(await layout() === '2v' && await shown() === 2 && await focusIdx() === 1, 'Cmd+Shift+Enter again goes back to two stacked');
+const before = await rows(1);
+check(!before.split('chat-2').pop().includes('\n\n\n'), 'the shortcut typed nothing into the chat');
+
+// Double click on a title bar does the same.
+await page.click('.pane:nth-child(1) .pane-title', { count: 2 }); await sleep(600);
+check(JSON.stringify(await hiddenList()) === '[false,true,true,true]', 'double click on the title bar makes the first chat full size');
+await page.click('.pane:nth-child(1) .pane-title', { count: 2 }); await sleep(600);
+check(await layout() === '2v', 'double click again goes back');
+
+// The 1 button in the top bar remembers where you came from too.
+await page.click('[data-layout="1"]'); await sleep(500);
+await page.hover('.pane:nth-child(1)');
+await page.click('.pane:nth-child(1) .pane-zoom'); await sleep(600);
+check(await layout() === '2v', 'after the 1 button, the full-size button goes back to two stacked');
+check(await terms() === base + 4, 'all four chats still running');
+
 await browser.close();
 bridge.kill();
 console.log(fails ? `${fails} FAILED` : 'ALL PASS');

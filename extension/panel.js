@@ -55,6 +55,7 @@ function normalize(raw) {
   s.titles = s.titles.slice(0, MAX);
   if (s.focus >= MAX) s.focus = 0;
   if (!(s.solo >= 0 && s.solo < MAX)) s.solo = 0;
+  if (s.layout !== '1' || !COUNTS[s.back] || s.back === '1') delete s.back;
   return s;
 }
 
@@ -133,7 +134,8 @@ function makePane(i) {
   cwd.addEventListener('keydown', (e) => { if (e.key === 'Enter') start(p); });
   el.querySelector('.start').addEventListener('click', () => start(p));
   el.querySelector('.resume').addEventListener('click', () => openHistory(i));
-  el.querySelector('.pane-resume').addEventListener('click', () => openHistory(i));
+  el.querySelector('.pane-zoom').addEventListener('click', () => toggleZoom(i));
+  el.querySelector('.pane-head').addEventListener('dblclick', (e) => { if (!e.target.closest('button') && p.tid) toggleZoom(i); });
   el.querySelector('.pane-close').addEventListener('click', () => (p.el.classList.contains('live') ? endChat(p) : closeEmpty(p)));
 
   new ResizeObserver(() => refit(p)).observe(el.querySelector('.pane-body'));
@@ -230,14 +232,34 @@ async function closeEmpty(p) {
 
 // The one-terminal button shows the pane you are in, full size; the other layouts put every pane back in its place.
 function pickLayout(layout) {
-  if (layout === '1' && state.layout !== '1') state.solo = state.focus;
+  if (layout === '1' && state.layout !== '1') { state.solo = state.focus; state.back = state.layout; }
   applyLayout(layout);
+  focusPane(state.focus);
+}
+
+// The full-size button on a chat (also Cmd+Shift+Enter, or a double click on its title bar):
+// that chat fills the panel, and the same action goes back to the layout you came from.
+function toggleZoom(i = state.focus) {
+  if (state.layout === '1') {
+    if (!state.back) return;
+    applyLayout(state.back);
+  } else {
+    if (!panes[i].tid) return;
+    setFocus(i);
+    state.back = state.layout;
+    state.solo = i;
+    applyLayout('1');
+  }
   focusPane(state.focus);
 }
 
 function applyLayout(layout) {
   state.layout = layout;
+  if (layout !== '1') delete state.back; // back only means something while one chat is full size
   grid.dataset.layout = layout;
+  if (state.back) grid.dataset.back = state.back; else delete grid.dataset.back;
+  const tip = layout === '1' ? 'Back to all chats (⌘⇧↵)' : 'Full size (⌘⇧↵)';
+  document.querySelectorAll('.pane-zoom').forEach((b) => { b.title = tip; });
   // Panes outside the layout are hidden, not killed: their chats keep running.
   const vis = visible();
   panes.forEach((p) => { p.el.hidden = !vis.includes(p); });
@@ -654,6 +676,7 @@ function keyHandler(e) {
   if (e.metaKey && !e.shiftKey && e.key.toLowerCase() === 'k') { openHistory(); e.preventDefault(); return false; }
   if (e.metaKey && !e.shiftKey && e.key.toLowerCase() === 'j') { openSpaces(); e.preventDefault(); return false; }
   if (e.metaKey && e.shiftKey && e.key.toLowerCase() === 'l') { sendTab(); e.preventDefault(); return false; }
+  if (e.metaKey && e.shiftKey && e.key === 'Enter') { toggleZoom(); e.preventDefault(); return false; }
   if (e.altKey && /^Digit[1-4]$/.test(e.code)) {
     const i = Number(e.code.slice(5)) - 1;
     if (visible().includes(panes[i])) focusPane(i);
