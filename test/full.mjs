@@ -69,6 +69,47 @@ await back.waitForFunction(() => typeof ws !== 'undefined' && ws?.readyState ===
 await sleep(1200);
 check((await rows(back, 1)).includes('typed-wide') && (await rows(back, 0)).includes('chat-1'), 'back in the panel, both chats are there with what was typed');
 check(await terms(back) === base + 2, 'both chats still running');
+
+// Eight chats in full width.
+const made2 = new Promise((r) => browser.once('targetcreated', r));
+check(await back.$eval('[data-layout="8"]', (b) => getComputedStyle(b).display === 'none'), 'the side panel does not offer six or eight');
+await back.click('#btn-full');
+const wide = await (await made2).page();
+await wide.waitForFunction(() => typeof ws !== 'undefined' && ws?.readyState === 1 && document.querySelectorAll('.pane.live').length === 2, { timeout: 15000 });
+await sleep(800);
+const shownIn = (pg) => pg.$$eval('.pane:not([hidden])', (e) => e.length);
+await wide.click('[data-layout="8"]'); await sleep(500);
+check(await shownIn(wide) === 8, 'the eight button shows eight panes');
+for (let i = 3; i <= 8; i++) {
+  await wide.click(`.pane:nth-child(${i}) .start`); await sleep(1300);
+  await wide.keyboard.type(`echo chat-${i}\n`); await sleep(500);
+}
+const cols = await wide.$$eval('.pane', (e) => new Set(e.map((x) => Math.round(x.getBoundingClientRect().left))).size);
+check(cols === 4 && await terms(wide) === base + 8, 'four columns, eight chats running');
+await wide.screenshot({ path: `${SHOTS}/31-eight.png` });
+await wide.keyboard.down('Alt'); await wide.keyboard.press('Digit7'); await wide.keyboard.up('Alt'); await sleep(300);
+check(await wide.$$eval('.pane', (e) => e.findIndex((x) => x.classList.contains('focus'))) === 6, 'Option+7 jumps to the seventh chat');
+await wide.click('[data-layout="6"]'); await sleep(500);
+check(await shownIn(wide) === 6 && await terms(wide) === base + 8, 'six shows six, the other two keep running');
+await wide.screenshot({ path: `${SHOTS}/32-six.png` });
+await wide.click('[data-layout="8"]'); await sleep(500);
+
+// Back in the side panel: four on screen, the rest still running; full width again brings all eight back.
+await wide.click('#btn-full'); await sleep(1500);
+const side = await browser.newPage();
+await side.goto(`chrome-extension://${extId}/panel.html`);
+await side.waitForFunction(() => typeof ws !== 'undefined' && ws?.readyState === 1 && document.querySelectorAll('.pane.live').length === 8, { timeout: 8000 }).catch(async () => console.log('DEBUG side', await side.evaluate(() => JSON.stringify({ state, live: document.querySelectorAll('.pane.live').length, space: space?.id, tids: panes.map((p) => p.tid) }))));
+await sleep(1000);
+check(await shownIn(side) === 4 && await side.$eval('#grid', (e) => e.dataset.layout) === '4', 'the side panel shows that Space as four');
+check(await terms(side) === base + 8, 'all eight chats still running');
+const made3 = new Promise((r) => browser.once('targetcreated', r));
+await side.click('#btn-full');
+const wide2 = await (await made3).page();
+await wide2.waitForFunction(() => typeof ws !== 'undefined' && ws?.readyState === 1 && document.querySelectorAll('.pane.live').length === 8, { timeout: 15000 });
+await sleep(1500);
+const all = await Promise.all([0, 1, 2, 3, 4, 5, 6, 7].map((i) => rows(wide2, i)));
+check(await shownIn(wide2) === 8 && all.every((r, i) => r.includes(`chat-${i + 1}`)), 'full width again: eight panes, every chat in its place');
+
 const panels = browser.targets().map((t) => `${t.type()} ${t.url().replace(/^chrome-extension:\/\/\w+/, '')}`).filter((s) => s.includes('panel.html'));
 console.log('INFO Margin views open at the end:', JSON.stringify(panels));
 

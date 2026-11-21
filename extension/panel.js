@@ -1,12 +1,18 @@
 // Margin side panel: a grid of real Claude Code terminals backed by the local bridge.
 // Chats live in Spaces (named sets of chats); each browser window shows one Space.
 const WS_URL = 'ws://127.0.0.1:5250';
-const COUNTS = { '1': 1, '2v': 2, '2h': 2, '4': 4 };
-const MAX = 4;
+const COUNTS = { '1': 1, '2v': 2, '2h': 2, '4': 4, '6': 6, '8': 8 };
+const MAX = 8;
 // The user's home folder. The bridge sends it on connect; it is remembered for the next open.
 let HOME = localStorage.getItem('margin:home') || '';
 function setHome(h) { if (h && h !== HOME) { HOME = h; localStorage.setItem('margin:home', h); } }
 const params = new URLSearchParams(location.search);
+// Full width: this page in a tab of its own instead of the side panel (see toggleFull).
+const FULL = params.get('full') === '1';
+const FROM = Number(params.get('from')) || null; // the tab the panel sat next to
+// Six and eight chats only fit in full width. The side panel shows such a Space as four;
+// the chats in panes 5 to 8 keep running, hidden, and are back when you return to full width.
+const eff = (layout) => (!FULL && COUNTS[layout] > 4 ? '4' : layout);
 const MODE = params.has('window') ? 'window' : 'panel';
 const PAGE = Math.random().toString(36).slice(2); // tells our own storage writes from other windows'
 
@@ -20,7 +26,7 @@ const spacesList = document.getElementById('spaces-list');
 
 // solo: which pane the one-terminal layout shows (the others keep running, hidden).
 const blank = () => ({ layout: '1', solo: 0, slots: Array(MAX).fill(null), titles: Array(MAX).fill(null), focus: 0 });
-const visible = (st = state) => (st.layout === '1' ? [panes[st.solo]] : panes.slice(0, COUNTS[st.layout]));
+const visible = (st = state) => (st.layout === '1' ? [panes[st.solo]] : panes.slice(0, COUNTS[eff(st.layout)]));
 let state = blank();
 let spaces = []; // [{ id, name, cwd }]
 let space = null;
@@ -37,22 +43,21 @@ let sessions = [];
 const skey = (id) => `margin:space:${id}`;
 let lastSaved = '';
 
+let loading = false; // showing a Space is not a change to it
 function save() {
-  if (!space) return;
+  if (!space || loading) return;
   const json = JSON.stringify(state);
   if (json === lastSaved) return; // unchanged; also stops two windows on one Space from echoing
   lastSaved = json;
   chrome.storage.local.set({ [skey(space.id)]: { ...state, writer: PAGE } });
 }
 
-// Saved state from older versions may use the removed six-pane layout: fold it into four.
-// Chats that sat in panes 5 and 6 keep running and show under "Still running" in past chats.
 function normalize(raw) {
   const { writer, ...st } = raw || {};
   const s = { ...blank(), ...st };
   if (!COUNTS[s.layout]) s.layout = '4';
-  s.slots = s.slots.slice(0, MAX);
-  s.titles = s.titles.slice(0, MAX);
+  s.slots = [...s.slots, ...Array(MAX).fill(null)].slice(0, MAX); // older saves have four
+  s.titles = [...s.titles, ...Array(MAX).fill(null)].slice(0, MAX);
   if (s.focus >= MAX) s.focus = 0;
   if (!(s.solo >= 0 && s.solo < MAX)) s.solo = 0;
   if (s.layout !== '1' || !COUNTS[s.back] || s.back === '1') delete s.back;
@@ -210,7 +215,7 @@ function endChat(p) {
 
 // Closing an empty pane removes it: the chats after it move up and the layout shrinks to fit.
 async function closeEmpty(p) {
-  const n = COUNTS[state.layout];
+  const n = COUNTS[eff(state.layout)];
   if (n === 1 || p.tid) return;
   const rest = panes.slice(0, n).filter((x) => x !== p).map((x) => [state.slots[x.i], state.titles[x.i]]);
   const live = rest.filter(([id]) => id);
@@ -218,6 +223,8 @@ async function closeEmpty(p) {
   if (n === 2) st.layout = '1';
   else if (live.length <= 1) st.layout = '1';
   else if (live.length === 2) st.layout = '2h';
+  else if (n > 4 && live.length <= 4) st.layout = '4';
+  else if (n > 6 && live.length <= 6) st.layout = '6';
   // When the layout shrinks, running chats come first so none of them ends up hidden.
   const order = st.layout === state.layout ? rest : [...live, ...rest.filter(([id]) => !id)];
   order.push([null, null]);
@@ -256,6 +263,7 @@ function toggleZoom(i = state.focus) {
 function applyLayout(layout) {
   state.layout = layout;
   if (layout !== '1') delete state.back; // back only means something while one chat is full size
+  layout = eff(layout);
   grid.dataset.layout = layout;
   if (state.back) grid.dataset.back = state.back; else delete grid.dataset.back;
   const tip = layout === '1' ? 'Back to all chats (⌘⇧↵)' : 'Full size (⌘⇧↵)';
@@ -286,8 +294,13 @@ async function showSpace(id, st) {
     p.el.querySelector('.pane-title').textContent = state.titles[p.i] || '';
     p.el.querySelector('.cwd').value = tilde(space.cwd);
   });
+  // A view that cannot show the pane with the cursor (side panel, Space with eight chats) moves its own
+  // cursor, but must not write that back: the write would yank the other view around mid-work.
+  loading = true;
   applyLayout(state.layout);
   setFocus(state.focus);
+  loading = false;
+  lastSaved = JSON.stringify(state);
   renderSpaceName();
   attachAll();
   bind(id);
@@ -635,7 +648,7 @@ function pick(idx) {
   if (p.tid) {
     p = visible().find((x) => !x.tid);
     if (!p) {
-      const next = state.layout === '1' && state.solo > 1 ? '4' : { '1': '2v', '2v': '4', '2h': '4' }[state.layout];
+      const next = state.layout === '1' && state.solo > 1 ? eff(state.solo > 5 ? '8' : state.solo > 3 ? '6' : '4') : { '1': '2v', '2v': '4', '2h': '4', ...(FULL && { '4': '6', '6': '8' }) }[eff(state.layout)];
       if (next) { applyLayout(next); p = panes.slice(0, COUNTS[next]).find((x) => !x.tid); }
     }
     if (!p) { p = panes[histTarget]; wsSend({ type: 'detach', id: p.tid }); }
@@ -664,8 +677,6 @@ historyEl.addEventListener('mousedown', (e) => { if (e.target === historyEl) clo
 // ---------- full width ----------
 // Chrome caps the side panel at about half the window. Full width is the same page in a tab of its own:
 // same Space, same chats (they live on the bridge). The button, or Option+Shift+F, goes there and back.
-const FULL = params.get('full') === '1';
-const FROM = Number(params.get('from')) || null; // the tab the panel sat next to
 async function toggleFull() {
   if (!FULL) {
     const [tab] = await chrome.tabs.query({ active: true, windowId: windowId ?? undefined });
@@ -702,7 +713,7 @@ function keyHandler(e) {
   if (e.metaKey && e.shiftKey && e.key.toLowerCase() === 'l') { sendTab(); e.preventDefault(); return false; }
   if (e.metaKey && e.shiftKey && e.key === 'Enter') { toggleZoom(); e.preventDefault(); return false; }
   if (e.altKey && e.shiftKey && e.code === 'KeyF') { toggleFull(); e.preventDefault(); return false; }
-  if (e.altKey && /^Digit[1-4]$/.test(e.code)) {
+  if (e.altKey && /^Digit[1-8]$/.test(e.code)) {
     const i = Number(e.code.slice(5)) - 1;
     if (visible().includes(panes[i])) focusPane(i);
     e.preventDefault(); return false;

@@ -18,13 +18,13 @@ I have used nothing else for a month now. It is deliberately very simple. Ultra 
 
 **It opens in the side panel next to any tab.** Click the Margin icon in your toolbar or press Option+Shift+K.
 
-**You can run up to four chats at once.** Pick 1 chat, 2 stacked, 2 side by side, or 4. Chats you hide keep running in the background.
+**You can run up to eight chats at once.** In the side panel, pick 1 chat, 2 stacked, 2 side by side, or 4. In full width you can also pick 6 or 8. Chats you hide keep running in the background.
 
 <p align="center"><img src="assets/layouts.png" alt="Four Claude Code chats in a grid inside the side panel" width="700"></p>
 
 **Any chat can take the full space of Margin, and that is my favourite feature.** If you have the 4 chat layout, hover any chat and click the full size button in its title bar, the one with the corner brackets. That chat then takes the whole panel while the other chats keep running, hidden. Click the button again and you are back in the layout you came from, with every chat in its old place. You can also press Cmd+Shift+Enter or double click the title bar. I use it when four chats are running and one needs my attention.
 
-**Margin can also use the whole width of your window.** The browser limits a side panel to about half the window, so I added a button at the right end of Margin's top bar, or Option+Shift+F, that opens Margin in a tab of its own. It stays in the same Space with the same chats, and nothing stops. The same button or shortcut brings you back to the side panel, on the page you came from, and in full width Cmd+Shift+L pastes the link of that page.
+**Margin can also use the whole width of your window.** The browser limits a side panel to about half the window, so I added a button at the right end of Margin's top bar, or Option+Shift+F, that opens Margin in a tab of its own. It stays in the same Space with the same chats, and nothing stops. The same button or shortcut brings you back to the side panel, on the page you came from, and in full width Cmd+Shift+L pastes the link of that page. Full width also adds two more layouts, 6 chats and 8 chats. If you go back to the side panel with more than four chats, it shows four of them, and the others keep running, hidden, and are back in place when you return to full width.
 
 **Spaces keep your work apart.** Press Cmd+J to switch between named sets of chats, for example Clients, Support, or your app. Each Space has its own layout and its own default folder for new chats. Each browser window shows one Space, so one desktop can be Clients and another one your app. You can rename Spaces, drag them to reorder, and delete the empty ones. Switching Space never stops a chat.
 
@@ -54,7 +54,7 @@ I have used nothing else for a month now. It is deliberately very simple. Ultra 
 | Cmd+Shift+L | Paste the current tab's link into the chat |
 | Cmd+Shift+Enter | Make the chat you are in full size, and go back |
 | Option+Shift+F | Switch between the side panel and full width |
-| Option+1 to Option+4 | Jump between panes |
+| Option+1 to Option+8 | Jump between panes |
 
 ## Install
 
@@ -102,7 +102,7 @@ Run `./uninstall.sh`, then remove the extension from `chrome://extensions`.
 
 ## Limits
 
-It only works on macOS for now. You get four chats per Space. Side-loaded extensions do not update themselves, so you update by hand as shown above.
+It only works on macOS for now. You get four chats on screen in the side panel, and a Space holds up to eight in full width. Side-loaded extensions do not update themselves, so you update by hand as shown above.
 
 The bridge trusts any extension installed in your browser, so run Margin in a browser where you trust your extensions.
 

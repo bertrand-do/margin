@@ -34,7 +34,7 @@ const terms = () => page.evaluate(() => ask('terms').then((t) => t.length));
 const base = await terms();
 const closeVisible = (i) => page.$eval(`.pane:nth-child(${i}) .pane-close`, (e) => getComputedStyle(e).display !== 'none');
 
-check(await page.$('[data-layout="6"], #btn-tab, #btn-history, #btn-pop') === null, 'six-pane layout and the three top-right buttons are gone');
+check(await page.$('#btn-tab, #btn-history, #btn-pop') === null && await page.$eval('[data-layout="6"]', (b) => getComputedStyle(b).display === 'none'), 'the side panel has no six layout (full width only) and the three old top-right buttons are gone');
 check(!(await closeVisible(1)), 'single empty pane has no close button');
 
 // Two columns: empty on the left, a chat on the right (the screenshot case).
@@ -63,14 +63,14 @@ await page.click('.pane:nth-child(2) .pane-close'); await sleep(1500);
 check(await layout() === '2h' && (await rows(0)).includes('right-chat') && (await rows(1)).includes('fourth-chat'), 'four panes with two chats shrinks to two columns, both chats visible');
 check(await terms() === base + 2, 'both chats kept running');
 
-// Old saved six-pane state folds into four.
+// A six-chat Space shows as four in the side panel.
 await page.evaluate(async () => {
   const k = 'margin:space:main';
   const st = (await chrome.storage.local.get(k))[k];
   await chrome.storage.local.set({ [k]: { ...st, layout: '6', slots: [...st.slots.slice(0, 4), null, null], titles: [...st.titles.slice(0, 4), null, null], writer: 'old' } });
 });
 await page.reload(); await page.waitForFunction(() => document.getElementById('offline').hidden); await sleep(1200);
-check(await layout() === '4' && await shown() === 4 && (await rows(0)).includes('right-chat'), 'an old six-pane Space opens as four');
+check(await layout() === '4' && await shown() === 4 && (await rows(0)).includes('right-chat'), 'a six-chat Space opens as four in the side panel');
 
 await browser.close();
 bridge.kill();

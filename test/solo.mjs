@@ -32,7 +32,7 @@ const layout = () => page.$eval('#grid', (e) => e.dataset.layout);
 const shown = () => page.$$eval('.pane:not([hidden])', (e) => e.length);
 const terms = () => page.evaluate(() => ask('terms').then((t) => t.length));
 const base = await terms();
-const hiddenList = () => page.$$eval('.pane', (e) => e.map((x) => x.hidden));
+const hiddenList = () => page.$$eval('.pane', (e) => e.slice(0, 4).map((x) => x.hidden)); // panes 5 to 8 only exist in full width
 const focusIdx = () => page.$$eval('.pane', (e) => e.findIndex((x) => x.classList.contains('focus')));
 
 // Four chats, each marked with its own word.
